@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	AuthModeKey   = "authmode"
-	SecretNameKey = "secretname"
+	AuthModeKey   = "AuthMode"
+	SecretNameKey = "SecretName"
 
 	AuthModeNone             = "none"
 	AuthModeUsernamePassword = "usernamepassword"
