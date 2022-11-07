@@ -101,6 +101,23 @@ func (p *InsecureProvider) GetSecret(path string, keys ...string) (map[string]st
 	return results, nil
 }
 
+func (p *InsecureProvider) GetSecretWithRetry(retries int, waitTime time.Duration, path string, keys ...string) (map[string]string, error) {
+	var last_err error
+	for i := 0; i < retries; i++ {
+		if i > 0 {
+			time.Sleep(waitTime)
+			waitTime = 2 * waitTime
+		}
+
+		secureSecrets, err := p.GetSecret(path, keys...)
+		if err == nil {
+			return secureSecrets, nil
+		}
+		last_err = err
+	}
+	return nil, last_err
+}
+
 // StoreSecret stores the secrets, but is not supported for Insecure Secrets
 func (p *InsecureProvider) StoreSecret(_ string, _ map[string]string) error {
 	return errors.New("storing secrets is not supported when running in insecure mode")

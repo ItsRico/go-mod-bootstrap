@@ -75,6 +75,44 @@ func TestSecureProvider_GetSecrets(t *testing.T) {
 	}
 }
 
+func TestSecureProvider_GetSecretWithRetry(t *testing.T) {
+	expected := map[string]string{"username": "admin", "password": "sam123!"}
+
+	mock := &mocks.SecretClient{}
+	mock.On("GetSecrets", "redis", "username", "password").Return(expected, nil)
+	mock.On("GetSecrets", "redis").Return(expected, nil)
+	notfound := []string{"username", "password"}
+	mock.On("GetSecrets", "missing", "username", "password").Return(nil, pkg.NewErrSecretsNotFound(notfound))
+
+	tests := []struct {
+		Name        string
+		Path        string
+		Keys        []string
+		Config      TestConfig
+		Client      secrets.SecretClient
+		ExpectError bool
+	}{
+		{"Valid Secure", "redis", []string{"username", "password"}, TestConfig{}, mock, false},
+		{"Invalid Secure", "missing", []string{"username", "password"}, TestConfig{}, mock, true},
+		{"Invalid No Client", "redis", []string{"username", "password"}, TestConfig{}, nil, true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Name, func(t *testing.T) {
+			target := NewSecureProvider(context.Background(), tc.Config, logger.MockLogger{}, nil, nil, "testService")
+			target.SetClient(tc.Client)
+			actual, err := target.GetSecretWithRetry(2, time.Second, tc.Path, tc.Keys...)
+			if tc.ExpectError {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, expected, actual)
+		})
+	}
+}
+
 func TestSecureProvider_GetSecrets_Cached(t *testing.T) {
 	expected := map[string]string{"username": "admin", "password": "sam123!"}
 

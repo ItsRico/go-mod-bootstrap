@@ -13,6 +13,8 @@ type SecretProvider interface {
 	// GetSecret retrieves secrets from the service's SecretStore at the specified path.
 	GetSecret(path string, keys ...string) (map[string]string, error)
 
+	// GetSecretWithRetries calls GetSecret for number of retries with waitTime for backoff
+	GetSecretWithRetry(retries int, waitTime time.Duration, path string, keys ...string) (map[string]string, error)
 	// SecretsUpdated sets the secrets last updated time to current time.
 	SecretsUpdated()
 

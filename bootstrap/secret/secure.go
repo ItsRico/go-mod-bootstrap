@@ -126,6 +126,23 @@ func (p *SecureProvider) GetSecret(path string, keys ...string) (map[string]stri
 	return secureSecrets, nil
 }
 
+func (p *SecureProvider) GetSecretWithRetry(retries int, waitTime time.Duration, path string, keys ...string) (map[string]string, error) {
+	var last_err error
+	for i := 0; i < retries; i++ {
+		if i > 0 {
+			time.Sleep(waitTime)
+			waitTime = 2 * waitTime
+		}
+
+		secureSecrets, err := p.GetSecret(path, keys...)
+		if err == nil {
+			return secureSecrets, nil
+		}
+		last_err = err
+	}
+	return nil, last_err
+}
+
 func (p *SecureProvider) getSecretsCache(path string, keys ...string) map[string]string {
 	secureSecrets := make(map[string]string)
 
